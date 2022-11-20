@@ -597,6 +597,7 @@ public:
 	void set_restrict_to_basic_settings(bool p_restrict);
 	void set_property_clipboard(const Variant &p_value);
 	Variant get_property_clipboard() const;
+	void get_property_list_and_sub_resources(Object* obj, 	List<PropertyInfo>* plist) const;
 
 	EditorInspector();
 };

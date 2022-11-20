@@ -2664,7 +2664,7 @@ void EditorInspector::update_tree() {
 	VBoxContainer *category_vbox = nullptr;
 
 	List<PropertyInfo> plist;
-	object->get_property_list(&plist, true);
+	get_property_list_and_sub_resources(object, &plist);
 
 	HashMap<VBoxContainer *, HashMap<String, VBoxContainer *>> vbox_per_path;
 	HashMap<String, EditorInspectorArray *> editor_inspector_array_per_prefix;
@@ -2678,6 +2678,7 @@ void EditorInspector::update_tree() {
 	}
 
 	StringName doc_name;
+	HashMap<StringName, PropertyDocInfo> subresources_cache;
 
 	// Get the lists of editors for properties.
 	for (List<PropertyInfo>::Element *E_property = plist.front(); E_property; E_property = E_property->next()) {
@@ -2852,7 +2853,6 @@ void EditorInspector::update_tree() {
 
 		// Get the path for property.
 		String path = p.name;
-
 		// First check if we have an array that fits the prefix.
 		String array_prefix = "";
 		int array_index = -1;
@@ -3114,7 +3114,24 @@ void EditorInspector::update_tree() {
 			// Build the doc hint, to use as tooltip.
 
 			// Get the class name.
-			StringName classname = doc_name == "" ? object->get_class_name() : doc_name;
+			StringName classname = doc_name;
+			if (classname == "") {
+				if (Object::cast_to<Resource>(object) && object->get_script()) {
+					Resource *res = cast_to<Resource>(object);
+					if (res) {
+						Script *src = cast_to<Script>(res->get_script());
+						if (src) {
+							classname = EditorNode::get_editor_data().script_class_get_name(src->get_path());
+						}
+						else {
+							classname = object->get_class_name();
+						}
+					}
+
+				} else {
+					classname = object->get_class_name();
+				}
+			}
 			if (!object_class.is_empty()) {
 				classname = object_class;
 			} else if (Object::cast_to<MultiNodeEdit>(object)) {
@@ -4098,4 +4115,26 @@ EditorInspector::EditorInspector() {
 	ED_SHORTCUT("property_editor/copy_value", TTR("Copy Value"), KeyModifierMask::CMD_OR_CTRL | Key::C);
 	ED_SHORTCUT("property_editor/paste_value", TTR("Paste Value"), KeyModifierMask::CMD_OR_CTRL | Key::V);
 	ED_SHORTCUT("property_editor/copy_property_path", TTR("Copy Property Path"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::C);
+}
+
+void EditorInspector::get_property_list_and_sub_resources(Object* obj, 	List<PropertyInfo>* plist) const {
+	if (!obj || !plist) {
+		return;
+	}
+	obj->get_property_list(plist, true);
+	for ( PropertyInfo& currentProperty : *plist ) {
+		if (currentProperty.class_name == "Resource") {
+			Variant variant_res = object->get(currentProperty.name);
+			Resource* res = cast_to<Resource>(variant_res);
+			if (!res) {
+				Script* src = cast_to<Script>(res->get_script());
+				if (src) {
+					const StringName script_class_name = EditorNode::get_editor_data().script_class_get_name(src->get_path());
+					print_line(script_class_name);
+					if (script_class_name)
+					currentProperty.class_name = script_class_name == ""? currentProperty.class_name : script_class_name;
+				}
+			}
+		}
+	}
 }
