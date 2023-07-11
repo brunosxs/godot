@@ -614,6 +614,22 @@ void DisplayServerMacOS::menu_callback(id p_sender) {
 	}
 }
 
+void DisplayServerMacOS::menu_will_open(NSMenu *p_menu) {
+	if (p_menu != nullptr && p_menu.supermenu != nullptr) {
+		if (p_menu == [NSApp mainMenu]) { // Skip Apple menu.
+			return;
+		}
+		const NSInteger index = [p_menu.supermenu indexOfItemWithSubmenu:p_menu];
+		const NSMenuItem *menu_item = [p_menu.supermenu itemAtIndex:index];
+		if (menu_item) {
+			GodotMenuItem *obj = [menu_item representedObject];
+			if (obj) {
+				obj->about_to_popup_item_submenu_callback.callv(Array());
+			}
+		}
+	}
+}
+
 bool DisplayServerMacOS::has_window(WindowID p_window) const {
 	return windows.has(p_window);
 }
@@ -975,7 +991,7 @@ int DisplayServerMacOS::global_menu_add_multistate_item(const String &p_menu_roo
 	return out;
 }
 
-int DisplayServerMacOS::global_menu_add_submenu_item(const String &p_menu_root, const String &p_label, const String &p_submenu, int p_index) {
+int DisplayServerMacOS::global_menu_add_submenu_item(const String &p_menu_root, const String &p_label, const String &p_submenu, int p_index, const Callable &p_about_to_popup_callback) {
 	_THREAD_SAFE_METHOD_
 
 	NSMenu *menu = _get_menu_root(p_menu_root);
@@ -1007,6 +1023,7 @@ int DisplayServerMacOS::global_menu_add_submenu_item(const String &p_menu_root, 
 
 		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
 		obj->callback = Callable();
+		obj->about_to_popup_item_submenu_callback = p_about_to_popup_callback;
 		obj->checkable_type = CHECKABLE_TYPE_NONE;
 		obj->max_states = 0;
 		obj->state = 0;

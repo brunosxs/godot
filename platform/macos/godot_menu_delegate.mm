@@ -73,4 +73,9 @@
 	return NO;
 }
 
+- (void)menuWillOpen:(NSMenu *)menu {
+	DisplayServerMacOS *server = static_cast<DisplayServerMacOS *>(DisplayServer::get_singleton());
+	server->menu_will_open(menu);
+}
+
 @end

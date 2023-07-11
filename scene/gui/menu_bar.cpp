@@ -145,6 +145,12 @@ void MenuBar::_open_popup(int p_index, bool p_focus_item) {
 	queue_redraw();
 }
 
+void MenuBar::_on_about_to_popup_native_submenu(PopupMenu *p_submenu) {
+	if (p_submenu) {
+		p_submenu->emit_signal("about_to_popup");
+	}
+}
+
 void MenuBar::shortcut_input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -211,9 +217,9 @@ void MenuBar::_update_submenu(const String &p_menu_name, PopupMenu *p_child) {
 			Node *n = p_child->get_node_or_null(p_child->get_item_submenu(i));
 			ERR_FAIL_NULL_MSG(n, "Item subnode does not exist: '" + p_child->get_item_submenu(i) + "'.");
 			PopupMenu *pm = Object::cast_to<PopupMenu>(n);
-			ERR_FAIL_NULL_MSG(pm, "Item subnode is not a PopupMenu: '" + p_child->get_item_submenu(i) + "'.");
+			ERR_FAIL_COND_MSG(!pm, "Item subnode is not a PopupMenu: " + p_child->get_item_submenu(i) + ".");
+			DisplayServer::get_singleton()->global_menu_add_submenu_item(p_menu_name, atr(p_child->get_item_text(i)), p_menu_name + "/" + itos(i), -1, callable_mp(this, &MenuBar::_on_about_to_popup_native_submenu).bind(p_child));
 
-			DisplayServer::get_singleton()->global_menu_add_submenu_item(p_menu_name, atr(p_child->get_item_text(i)), p_menu_name + "/" + itos(i));
 			_update_submenu(p_menu_name + "/" + itos(i), pm);
 		} else {
 			int index = DisplayServer::get_singleton()->global_menu_add_item(p_menu_name, atr(p_child->get_item_text(i)), callable_mp(p_child, &PopupMenu::activate_item), Callable(), i);
@@ -293,7 +299,7 @@ void MenuBar::_update_menu() {
 			}
 			String menu_name = atr(String(popups[i]->get_meta("_menu_name", popups[i]->get_name())));
 
-			index = DisplayServer::get_singleton()->global_menu_add_submenu_item("_main", menu_name, root_name + "/" + itos(i), index);
+			index = DisplayServer::get_singleton()->global_menu_add_submenu_item("_main", menu_name, root_name + "/" + itos(i), index, callable_mp(this, &MenuBar::_on_about_to_popup_native_submenu).bind(popups[i]));
 			if (menu_cache[i].disabled) {
 				DisplayServer::get_singleton()->global_menu_set_item_disabled("_main", index, true);
 			}

@@ -113,6 +113,7 @@ class MenuBar : public Control {
 	int get_menu_idx_from_control(PopupMenu *p_child) const;
 
 	void _open_popup(int p_index, bool p_focus_item = false);
+	void _on_about_to_popup_native_submenu(PopupMenu *p_submenu);
 	void _popup_visibility_changed(bool p_visible);
 	void _update_submenu(const String &p_menu_name, PopupMenu *p_child);
 	void _clear_menu();

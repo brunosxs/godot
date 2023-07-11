@@ -46,6 +46,7 @@ enum GlobalMenuCheckType {
 @public
 	Callable callback;
 	Callable key_callback;
+	Callable about_to_popup_item_submenu_callback;
 	Variant meta;
 	GlobalMenuCheckType checkable_type;
 	int max_states;

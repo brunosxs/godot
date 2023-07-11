@@ -38,6 +38,7 @@
 }
 
 - (void)doNothing:(id)sender;
+- (void)menuWillOpen:(NSMenu *)menu;
 
 @end
 
